@@ -14,22 +14,16 @@ const initSlider = (slider) => {
 
   sliderItems[currentSlide].classList.add("activeSlide");
 
+  if (currentSlide === 0) {
+    prev.classList.add("slide-arrow_disabled");
+  }
+
   let itemWidth = sliderItems[0].clientWidth;
 
   const sliderItemsToShow = Math.floor(sliderContainer.clientWidth / itemWidth);
 
-  let resizeTimer;
-
-  function handleResize() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () {
-      currentSlide = 0;
-      sliderContainer.style.transform = "translateY(0px)";
-      prev.classList.add("slide-arrow_disabled");
-      next.classList.remove("slide-arrow_disabled");
-      itemWidth = sliderItems[0].clientWidth;
-    }, 200);
-  }
+  let touchStartX = 0;
+  let touchMoveX = 0;
 
   sliderContainer.style.transform = "translateY(0px)";
 
@@ -39,52 +33,80 @@ const initSlider = (slider) => {
         : elem.classList.remove(className);
   };
 
+  const handleSlide = (condition, slideElem, direction) => {
+    if (condition) {
+      currentSlide += direction;
+      const translateXValue = -currentSlide * (itemWidth + slideGap);
+      slideElem.style.transform = `translateX(${translateXValue}px)`;
+    }
+    sliderItems.forEach((e) => e.classList.remove("activeSlide"));
+    sliderItems[currentSlide].classList.add("activeSlide");
+    handlePrevNextBtn();
+  };
+
   const handlePrevNextBtn = () => {
     toggleClass(currentSlide === 0, prev, "slide-arrow_disabled");
     toggleClass(currentSlide === sliderItems.length - sliderItemsToShow, next, "slide-arrow_disabled");
   };
 
-  handlePrevNextBtn();
+  // Обработчики touch events для слайдера
+  let touchStartClientX = null;
 
-  const handleSlide = (condition, slideElem, event) => {
-    const slideTransformValue = slideElem.style.transform;
-    const translateXValue = slideTransformValue.replace(/[^\d.]/g, "");
+  const handleTouchStart = (e) => {
+    touchStartClientX = e.touches[0].clientX;
+  };
 
-    if (condition && event === "next") {
-      currentSlide += 1;
-      slideElem.style.transform = `translateX(-${
-          +translateXValue + itemWidth + slideGap
-      }px)`;
-    } else if (condition && event === "prev") {
-      currentSlide -= 1;
-      slideElem.style.transform = `translateX(-${
-          +translateXValue - itemWidth - slideGap
-      }px)`;
+  const handleTouchMove = (e) => {
+    if (!touchStartClientX) {
+      return;
     }
-    sliderItems.forEach((e) => e.classList.remove("activeSlide"));
-    sliderItems[currentSlide].classList.add("activeSlide");
+
+    const touchMoveX = e.touches[0].clientX;
+    const deltaX = touchMoveX - touchStartClientX;
+
+    if (deltaX > 50) {
+      // Пользователь свайпнул вправо (предыдущий слайд)
+      handleSlide(currentSlide !== 0, sliderContainer, -1);
+      touchStartClientX = null;
+    } else if (deltaX < -50) {
+      // Пользователь свайпнул влево (следующий слайд)
+      handleSlide(currentSlide !== sliderItems.length - sliderItemsToShow, sliderContainer, 1);
+      touchStartClientX = null;
+    }
   };
 
-  const handleNextClick = () => {
-    handleSlide(currentSlide !== sliderItems.length - sliderItemsToShow, sliderContainer, "next");
-    handlePrevNextBtn();
+  const handleTouchEnd = () => {
+    touchStartClientX = null;
   };
 
-  const handlePrevClick = () => {
-    handleSlide(currentSlide !== 0, sliderContainer, "prev");
-    handlePrevNextBtn();
-  };
+  // Добавляем обработчики touch events к слайдеру
+  sliderContainer.addEventListener("touchstart", handleTouchStart);
+  sliderContainer.addEventListener("touchmove", handleTouchMove);
+  sliderContainer.addEventListener("touchend", handleTouchEnd);
 
-  next.addEventListener("click", handleNextClick);
-  prev.addEventListener("click", handlePrevClick);
+  // Обработчики touch events для кнопок "Next" и "Prev"
+  next.addEventListener("touchstart", (e) => {
+    e.stopPropagation(); // Предотвращаем "перехват" события слайдера
+    handleSlide(currentSlide !== sliderItems.length - sliderItemsToShow, sliderContainer, 1);
+  });
 
-  const removeClickHandlers = () => {
-    next.removeEventListener("click", handleNextClick);
-    prev.removeEventListener("click", handlePrevClick);
+  prev.addEventListener("touchstart", (e) => {
+    e.stopPropagation(); // Предотвращаем "перехват" события слайдера
+    handleSlide(currentSlide !== 0, sliderContainer, -1);
+  });
+
+  const removeTouchHandlers = () => {
+    // Удаляем обработчики touch events при необходимости
+    sliderContainer.removeEventListener("touchstart", handleTouchStart);
+    sliderContainer.removeEventListener("touchmove", handleTouchMove);
+    sliderContainer.removeEventListener("touchend", handleTouchEnd);
+
+    next.removeEventListener("touchstart", handleTouchStart);
+    prev.removeEventListener("touchstart", handleTouchStart);
   };
 
   sliderInstances[slider.getAttribute("id")] = {
-    removeClickHandlers,
+    removeTouchHandlers,
     sliderContainer,
     next,
     prev
@@ -94,26 +116,3 @@ const initSlider = (slider) => {
 const sliders = document.querySelectorAll('.slider');
 
 sliders.forEach(slider => initSlider(slider));
-
-// /* -------------------- */
-// /*Circular spinning text*/
-// /* -------------------- */
-//
-// let offsetRadiusStep = 5;
-// let circularTexts = document.querySelectorAll(".circular");
-// circularTexts.forEach(circularText => {
-//   let letters = circularText.textContent.split("");
-//   let total = letters.length;
-//   circularText.style.setProperty("--total", `${total}`);
-//   circularText.textContent = "";
-//   letters.forEach((letter, i) => {
-//     let span = document.createElement("span");
-//     span.textContent = letter;
-//     span.style.setProperty("--i", `${i}`);
-//     let offsetRadius = offsetRadiusStep * total;
-//     let offsetPath = `path('M 0,${offsetRadius} a ${offsetRadius},${offsetRadius} 0 1,1 0,1 z')`;
-//     span.style.setProperty("--offset-path", offsetPath);
-//     circularText.append(span);
-//   });
-// });
-

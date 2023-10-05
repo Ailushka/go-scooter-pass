@@ -578,6 +578,10 @@
 /*   ARTICLE COMPONENT  */
 /* -------------------- */
 
+.article {
+  overflow: hidden;
+}
+
 .article__content {
   /*max-width: 1106px;*/
   /*margin: 0 auto;*/
