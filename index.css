@@ -612,6 +612,10 @@
   }
 }
 
+/* -------------------- */
+/*   EVENTS COMPONENT   */
+/* -------------------- */
+
 .events__title {
   max-width: 90%;
   margin-bottom: 34px;
@@ -756,11 +760,12 @@
     background-size: 100%;
   }
   .event_type_music::before {
-    width: 200px;
-    height: 200px;
+    display: block;
+    width: 160px;
+    height: 180px;
     background-image: url(./images/icons/deco-lines_icon.png);
-    top: -100px;
-    right: -15px;
+    top: -85px;
+    left: 205px;
   }
   .event__image {
     border-radius: 48px;
